@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+	
+	<!--Links for Bootstrap-->
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+    <script src='https://cdn.firebase.com/js/client/2.4.1/firebase.js'></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+    <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+<script type="text/javascript" src="yogaPlayers.json"></script>
+<style>
+body{
+	background-color: #437983;
+}
+
+#form{
+	background-color: #0F444F;
+	color: black;
+	padding-bottom: 20px;
+
+}
+
+#title{
+	color: white;
+}
+
+
+</style>
+<script>
+
+//Function that is called when a user types in their user details into the right form
+function login(){
+	var xhttp = new XMLHttpRequest();
+	var url = "yogaPlayers.json";
+
+	xhttp.onreadystatechange = function() {
+		if (xhttp.readyState == 4 && xhttp.status == 200) {
+			var myData = JSON.parse(xhttp.responseText);					//Get the JSON file and parse into an array
+			var i;
+			var name = document.getElementById('name').value;				//Get the user input
+			var password = document.getElementById('password').value;
+			var registered = false;
+			for(i = 0; i < myData.length; i++) {							//Loop through the array
+				if(myData[i].name==name && myData[i].password==password){	//If the credentials are found, change boolean to true
+					registered = true;
+					break;
+				}
+			}
+		
+			if(registered==true){											//If found in JSON file
+				document.cookie = "name="+name;									//save name in cookies to know who is logged in
+				alert("Log-in Successful");										//Tell the user that their log in was successful
+				window.location='main.html';									//bring them to main menu
+			}else{															//Otherwise, tell the user that they have not yet registered
+				alert("Credentials not found");
+			}
+		}
+	};
+	xhttp.open("GET", url, true);
+	xhttp.send();
+}
+
+//Function that is called when the user presses the "register" button
+function register(){
+	var xmlhttp = new XMLHttpRequest();
+	var url = "yogaPlayers.json";
+
+	xmlhttp.onreadystatechange = function() {
+		if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+			var myArr = JSON.parse(xmlhttp.responseText);					//Get the JSON file and parse into array
+			updateJSON(myArr);												//Call another function to push on to the end of that array
+		}
+	};
+	xmlhttp.open("GET", url, true);
+	xmlhttp.send();
+}
+
+//Function used to push a new user to the JSON file
+function updateJSON(arr) {
+	var myArr = arr;
+	var name = document.getElementById('regname').value;
+	var password= document.getElementById('regpassword').value;
+	
+	if(name == " " || password == " "){										//make sure fields are filled in
+		alert("Please fill in both name and password fields");
+	}else{
+		var alreadyRegistered = false;
+		for(var i = 0; i < myArr.length; i++) {
+			if(myArr[i].name==name){
+				alreadyRegistered=true;
+				break;
+			}
+		}
+		if(alreadyRegistered==true){										//make sure username isnt already used
+			alert("Please choose another username, as this one is already taken");
+		}else{
+			var newPerson = {"name": name, "password": password, "gamecounter": 0}; //make new person object with user details
+			myArr.push(newPerson);													//push new object to end of array
+			var arr = JSON.stringify(myArr);										//convert string back to JSON
+	
+			var xhttp = new XMLHttpRequest();
+			xhttp.onreadystatechange = function() {
+				if (xhttp.readyState == 4 && xhttp.status == 200) {
+					document.cookie = "name="+name;									//If successful, save name in cookie
+					alert("Registration was successful");							//tell user they registered successfully
+					window.location="main.html";									//bring user to the main page
+				}
+			};
+			xhttp.open("POST", "register.php", true);	
+			xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+			xhttp.send("newArray="+arr);
+		}
+	}
+
+}
+</script>
+</head>
+
+<body>
+
+<center>
+	<br>
+	<h1>Yoga Quiz</h1>
+	<br>
+	<h2>If you have not been here before, please register a unique username and password on the left. <br>Otherwise, you are free to log in with your details on the right</h2>
+</center>
+<br>
+<div class="row">
+	<div class="col-sm-3"></div>
+	<div class="col-sm-3" id="form">
+		<center>
+			<h1 id="title">Please register:</h1>
+			<form action="loginpage.php" method="post">
+				Username:<br>
+				<input type="text" name="regname" name="regname" id="regname"><br>
+				Password:<br>
+				<input type="text" name="regpassword" name= "regpassword" id="regpassword"><br><br>
+				<button type="button" onclick="register()">Register</button>
+			</form>
+		</center>
+	</div>
+	<div class="col-sm-3" id="form">
+		<center>
+			<h1 id="title">Please log in:</h1>
+			<form>
+				Username:<br>
+				<input type="text" name="name" id="name"><br>
+				Password:<br>
+				<input type="text" name="password" id="password"><br><br>
+				<button type="button" onclick="login()">Log in</button>
+			</form>
+		</center>
+	</div>
+	<div class="col-sm-3"></div>
+</div>
+
+
+</body>
+
+</html>

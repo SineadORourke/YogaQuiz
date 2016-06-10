@@ -1,0 +1,201 @@
+<!-- This is the main menu page, which the user is brought to after logging in-->
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+	
+	<!--Links for Bootstrap-->
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+    <script src='https://cdn.firebase.com/js/client/2.4.1/firebase.js'></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+    <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+	<style>
+	
+		body{
+			background-color: #437983;
+		}
+		
+		.blockButton{
+			width: 500px;
+		}
+		
+		#otherButtons{
+			width: 250px;
+		}
+		
+		#welcome{
+			font-size: 100px;
+			color: white;
+		
+		}
+		
+		#column{
+			padding-left:20px;
+			padding-right:20px;
+		}
+		
+		#historyTable{
+			display: none;
+		}
+		
+		#success{
+			font-size:35px;
+			color: white;
+		}
+		
+		#link{
+			color:white;
+			
+		}
+		
+		#courtesy{
+			position: fixed;
+			bottom: 0;
+			right: 0;
+		}
+		
+		
+		
+	</style>
+	
+	<script>
+	//When the window loads, set the personal welcome message from the cookie (set in loginpage.html) 
+	window.onload = function(){
+		checkCookie();
+		getHistory();
+	}	
+	
+	//Function to split the cookie up to get its value
+	function getCookie(cname) {
+		var x,y;
+		var cookieArray=document.cookie.split(';');
+		for (var i=0; i < cookieArray.length;i++){
+		x=cookieArray[i].substr(0,cookieArray[i].indexOf('='));
+		y=cookieArray[i].substr(cookieArray[i].indexOf("=")+1);
+		x=x.replace(/^\s+|\s+$/g,"");
+		if (x==cname)
+			{
+			var result = unescape(y)
+			return result;
+			}
+		}
+	}
+	
+	//Function that sets the welcome message
+	function checkCookie() {
+		var user = getCookie("name");
+		if (user != "") {
+			document.getElementById('showName').innerHTML = user;
+		} else {
+			document.getElementById('showName').innerHTML = "Unknown user";
+		}
+	}
+	
+	//Function that returns the user that is logged in
+	function returnCookie() {
+		var user = getCookie("name");
+		if (user != "") {
+			return user;
+		} else {
+			return "Unknown user";
+		}
+	}
+	
+	
+	//Function that gets the gaming history of the logged in person (shown when "Game History" button is clicked)
+	function getHistory(){
+		var xhttp = new XMLHttpRequest();
+		var url = "yogaPlayers.json";
+		var i;							
+		var j;
+		var position;					//holds the array index of the user (from the json file)
+		var gamecounter;				//holds how many games the user has played
+		var total =0;					//holds the total amount of correct answers (adding up all game results)
+		var player= returnCookie();		//the user that is logged in
+		var output ="";					//holds the output string for the game stats
+	
+		xhttp.onreadystatechange = function() {
+			if (xhttp.readyState == 4 && xhttp.status == 200) {
+				var myData = JSON.parse(xhttp.responseText);		//get the json file and parse into array
+	
+				for(i = 0; i < myData.length; i++) {				//loop through the array
+					if(myData[i].name==player){						//stop when you find the person that is logged-in in the array
+						gamecounter=(myData[i].gamecounter*1);		//save their gamecounter (convert to int)
+						if(gamecounter==0){							//If the user has not played a game yet, output no records
+							document.getElementById('history').innerHTML = "No records";
+						}else{										//otherwise loop through their game stats array (using gamecounter as the array length)
+							for(j =0; j<gamecounter; j++){			
+								output+= "<span id='column'>"+ myData[i].gamestats[j].date + "</span><span id='column'>" + myData[i].gamestats[j].quiz + "</span><span id='column'>Score: " + myData[i].gamestats[j].correctAnswers + "/5 </span></br>";
+								total += (myData[i].gamestats[j].correctAnswers*1);
+							}
+							
+							//output the results in HTML
+							document.getElementById('history').innerHTML = output;						
+							document.getElementById('success').innerHTML = "Total: "+ total + "/" + (gamecounter*5);
+						}
+						
+						break;
+					}
+				}
+				
+				
+			}
+		
+		};
+		xhttp.open("GET", url, true);
+		xhttp.send();
+	
+	}
+	
+	//Function that changes the display of the game history
+	function showGameHistory(){
+		document.getElementById("historyTable").style.display="block";
+	}
+	
+	//Function that clears the cookie, and moves the user back to the login page
+	function logout(){
+		document.cookie = "name= ";
+		window.location = "loginpage.html";
+	}
+	
+	</script>
+</head>
+
+<body>
+<center>
+	<h1 id="welcome">Welcome <span id="showName">user</span></h1>
+	<h2>Please choose a quiz:</h2>
+	<br/>
+	<button class='btn btn-default btn-lg btn-block blockButton' onclick= "window.location='yogaGame1.html'"><b>Quiz 1</b><br/>4 pics - 1 word</button><br>
+	<button class='btn btn-default btn-lg btn-block blockButton' onclick= "window.location='yogaGame2.html'"><b>Quiz 2 </b><br/>4 words - 1 pic</button>
+	<br/><br/><br/><br/>
+	<div id="historyTable">
+		<h2>Game History</h2>
+		<div id="history"></div>
+		<br/>
+		<div id="success"></div>
+	</div>
+	<br/><br/><br/>
+
+	<div class="row">
+		<div class="col-sm-4"></div>
+		<div class="col-sm-2"><button id="otherButtons" type="button" class='btn btn-default btn-sm btn-block blockButton' onclick="logout()">Logout</button></div>
+		<div class="col-sm-2"><button id="otherButtons" type="button" class='btn btn-default btn-sm btn-block blockButton' onclick="showGameHistory()">Game History</button></div>
+		<div class="col-sm-4"></div>
+	</div>
+
+	<p id="courtesy">Yoga cards courtesy of <a id="link" href="www.yogacard.com">www.yogacards.com</a> (2016)</p>
+</center>
+
+</body>
+
+</html>

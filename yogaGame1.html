@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+	
+	<!--Links for Bootstrap-->
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+    <script src='https://cdn.firebase.com/js/client/2.4.1/firebase.js'></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+    <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+<style>
+
+body{
+	background-color: #437983;
+}
+#cardResult{
+	display: none;
+}
+
+img:hover {		
+		box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24), 0 17px 50px 0 rgba(0,0,0,0.19);
+	}
+	
+#correct{
+			position: absolute;
+			left: 400px;
+			top: 100px;
+			z-index: 2;
+			width: 200px;
+			height: 100px;
+			background-color: green;
+			color: white;
+			text-align: center;
+			
+	
+		}
+
+#toChoose{
+
+		background-color: #0F444F;
+		color: white;
+}
+
+#counters{
+		color: white;
+}
+
+#link{
+		color:white;
+			
+	}
+		
+#courtesy{
+		position: fixed;
+		bottom: 0;
+		right: 0;
+}
+</style>
+	
+<script>
+//When the window loads, generate a round
+window.onload = function(){
+		startRound();
+	}	
+	
+//Function to get the value of the set cookie
+function getCookie(cname) {
+		var x,y;
+		var cookieArray=document.cookie.split(';');
+		for (var i=0; i < cookieArray.length;i++){
+		x=cookieArray[i].substr(0,cookieArray[i].indexOf('='));
+		y=cookieArray[i].substr(cookieArray[i].indexOf("=")+1);
+		x=x.replace(/^\s+|\s+$/g,"");
+		if (x==cname)
+			{
+			var result = unescape(y)
+			return result;
+			}
+		}
+	}
+	
+//Function to return the user that is logged in
+function checkCookie() {
+	var user = getCookie("name");
+	if (user != "") {
+		return user;
+	} else {
+		return "Unknown User";
+	}
+}
+	
+//Function that is called when an answer card is clicked (used to check if the user was right or not)
+function checkCorrect(){
+		var xhttp = new XMLHttpRequest();			
+		xhttp.onreadystatechange = function(){		
+		if(xhttp.readyState == 4 && xhttp.status == 200){
+			document.getElementById("cardResult").innerHTML=xhttp.responseText;
+			
+				if(document.getElementById("choosen").innerHTML==document.getElementById("toChoose").innerHTML){ 	//If the correct option is chosen
+					//alert("CORRECT");
+					var resultMessage = document.getElementById("resultmessage");									//Display the "correct" message
+					resultMessage.style.display = "block";
+					document.getElementById('result').innerHTML = "CORRECT!";
+					var answercounter = document.getElementById('answercounter').innerHTML;							//Update the answer counter
+					answercounter++;
+					document.getElementById('answercounter').innerHTML = answercounter;
+					
+
+				}else{																								//If an incorrect option is chosen
+					//alert("Incorrect");
+					var resultMessage = document.getElementById("resultmessage");									//Display the "incorrect" message
+					resultMessage.style.display = "block";
+					document.getElementById('result').innerHTML = "incorrect!";
+				}
+				
+				
+				var roundcounter = document.getElementById('roundcounter').innerHTML;								//Get the round counter 
+				if(roundcounter==5){																				//If it is the fifth round, gameover
+					gameOver();
+				}else{																								//otherwise, start a new round
+					startRound();
+				}
+				
+			}	
+		};
+		
+		var target = event.target || event.srcElement;																//get the id of the button clicked
+		var id = target.id;
+	
+		xhttp.open("POST", "result1.php", true);	
+		xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+		xhttp.send("id="+id);
+		
+	}
+
+//Function that is called when the 5th round is finished
+function gameOver(){
+	var correctAnswers = document.getElementById("answercounter").innerHTML;										//get the amount of correct answers
+	document.getElementById('endresult').innerHTML = correctAnswers;												//show the amount of correct answers in the modal
+	var quiz = "Quiz 1";
+	var xhttp = new XMLHttpRequest();
+	var url = "yogaPlayers.json";
+	var i;
+	var position;																									//holds the array index of the person logged in
+	var gamecounter;																								//holds the number of games the user has played
+	var player= checkCookie();																						//gets the player that is logged in
+	
+	xhttp.onreadystatechange = function() {
+		if (xhttp.readyState == 4 && xhttp.status == 200) {
+			var myData = JSON.parse(xhttp.responseText);															//get the json file and parse into array
+			for(i = 0; i < myData.length; i++) {																	//loop through the array and find out the players index and gamecounter
+				if(myData[i].name==player){
+					gamecounter=myData[i].gamecounter;
+					position=i;
+					break;
+				}
+			}
+			
+			//alert("position: " + position + " player: " + player + " correct: " + correctAnswers + "GC: "+ gamecounter);
+			addScore(quiz, position, correctAnswers, gamecounter);													//call function to add their score to the JSON file
+			$('#myModal').modal('show');																			//show the game over modal, that brings you back to the main page
+		}
+		
+	};
+	xhttp.open("GET", url, true);
+	xhttp.send();
+}
+
+//Function to add the player's score to the JSON file
+function addScore(quiz, position, correctAnswers, gamecounter){
+	var xhttp = new XMLHttpRequest();
+	xhttp.onreadystatechange = function() {
+		if (xhttp.readyState == 4 && xhttp.status == 200) {
+			//alert(xhttp.responseText);
+			
+		}
+	};
+	xhttp.open("POST", "addScore.php", true);	
+	xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+	xhttp.send("quiz="+quiz+"&position="+position+"&correctAnswers="+correctAnswers+"&gamecounter="+gamecounter);
+
+}
+
+
+//Function that generates a round
+function startRound(){
+	var xhttp = new XMLHttpRequest();			
+	xhttp.onreadystatechange = function(){		
+		if(xhttp.readyState == 4 && xhttp.status == 200){
+			document.getElementById("cardTable").innerHTML=xhttp.responseText;		//Display one picture and 4 answer buttons
+		}	
+		};
+		
+		//Get an array of 4 random numbers between 1 and 20, with no repeating numbers (found on Stackoverflow)
+		var arr = []
+		while(arr.length < 4){
+			var randomnumber=Math.ceil(Math.random()*20);
+			var found=false;
+			for(var i=0;i<arr.length;i++){
+				if(arr[i]==randomnumber){found=true;break}
+			}
+		if(!found)arr[arr.length]=randomnumber;
+		}
+		
+		var card1= arr[0];															//get the 4 random id
+		var card2= arr[1];
+		var card3= arr[2];
+		var card4= arr[3];
+		
+		
+
+		xhttp.open("POST", "cards.php", true);	
+		xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+		xhttp.send("card1="+card1+"&card2="+card2+"&card3="+card3+"&card4="+card4);  //pass random ids to php page
+		
+		var roundcounter = document.getElementById('roundcounter').innerHTML;		//update the round counter
+		roundcounter++;
+		document.getElementById('roundcounter').innerHTML = roundcounter;
+	
+}		
+
+
+</script>
+</head>
+
+
+<body>
+<div class="row" id="counters">
+	<div class="col-sm-2"></div>
+	<div class="col-sm-4"><center><h2>Round No:<span id="roundcounter">1</span></h2></center></div>
+	<div class="col-sm-4"><center><h2>Correct Answers:<span id="answercounter">0</span>/5</h2></center></div>
+	<div class="col-sm-2"></div>
+</div>
+<br/><br/>
+
+<center>
+	<h1>Can you find the card that matches this Sanscript name?</h1>
+	<div id="cardTable"></div>
+	<div id="cardResult"></div>
+</center>
+
+<div id="resultmessage" align="center">Your last answer was <span id="result">?</span></div>
+
+
+
+<div class="container">
+<!-- Modal -->
+  <div class="modal fade" id="myModal" role="dialog">
+    <div class="modal-dialog">
+    
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <center><h4 class="modal-title">Game Over</h4></center>
+        </div>
+        <div class="modal-body">
+          <center><p>You got <span id="endresult">0</span>/5 correct!</p>
+		  <p>Your score has been added to your game history</p></center>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" onclick="window.location='main.html'" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+  
+</div>
+<p id="courtesy">Yoga cards courtesy of <a id="link" href="www.yogacard.com">www.yogacards.com</a> (2016)</p>
+</body>
+</html>
